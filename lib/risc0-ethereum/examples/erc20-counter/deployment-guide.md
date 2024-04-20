@@ -42,10 +42,12 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
 4. Deploy the ERC20 Toyken contract:
     ```
     forge script --rpc-url http://localhost:8545 --broadcast script/DeployERC20.s.sol
+    forge script --rpc-url http://localhost:8545 --broadcast script/DeployERC721.s.sol
     ```
     Save the `ERC20 Toyken` contract address to an env variable:
     ```
     export TOYKEN_ADDRESS=#COPY ERC20 TOYKEN ADDRESS FROM DEPLOY LOGS
+    export ZKKYC_ADDRESS=# Copy zkkyc token address
     ```
 
     > You can also use the following command to set the contract address if you have [`jq`][jq] installed:
@@ -57,8 +59,12 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
 5. Mint some Toyken:
     ```
     cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $TOYKEN_ADDRESS 'mint(address, uint256)' 0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4 100
+    feel free to use these:
+    2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
+    afc4a4c32e81c86131ac00f137cde88848fbead71f4f16ab30f7a7b3f5d99239
+    0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
 
-cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $TOYKEN_ADDRESS 'mint(bytes32)' '0x2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430'
+    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4 0x2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
 
     ```
     > Now the account at address `0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4` should have 100 Toyken.

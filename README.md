@@ -48,3 +48,7 @@ Goals
     a. Separate terminal
     b. cd to `lib/risc0-ethereum/examples/erc20$`
     c. `RPC_URL=http://127.0.0.1:8545 RUST_LOG=info cargo run --release`
+
+
+TODOS:
+- Prove you own the account inside of the guest which queries the zkkyc contract

@@ -33,7 +33,7 @@ use std::fs;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 /// Must match the guest code.
-const CONTRACT: Address = address!("52d2c41283712021D514E2E73A263b6Be5E8F35f");
+const CONTRACT: Address = address!("CB075B2fa7991C8178Dd5640f0C98c0AB1DBfE0c");
 
 sol! {
     /// ERC-20 balance function signature.
@@ -71,9 +71,10 @@ struct Args {
     #[clap(long)]
     contract: String,
 
-    // /// Account address to read the balance_of on Ethereum
-    // #[clap(long)]
-    // account: Address,
+    /// Account address to read the balance_of on Ethereum
+    #[clap(long)]
+    account: Address,
+
     #[clap(long, env)]
     private_secret_key: String
 }
@@ -92,13 +93,14 @@ fn main() -> Result<()> {
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
 
-    // Function to call
+    // Get args
     let private_secret_key = args.private_secret_key;
+    let account = args.account;
 
     // let call = IERC20::fakeBalanceOfCall { account };
     // let call = crate::fakeBalanceOfCall { account };
-    // let call = IERC20::balanceOfCall { account };
-    let call = IERC20::commitmentsCall {};
+    let call = IERC20::balanceOfCall { account };
+    // let call = IERC20::commitmentsCall {};
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
@@ -106,9 +108,9 @@ fn main() -> Result<()> {
     println!(
         "For block {} `{}` returns: {:?}",
         number,
-        // IERC20::balanceOfCall::SIGNATURE,
+        IERC20::balanceOfCall::SIGNATURE,
         // IERC20::fakeBalanceOfCall::SIGNATURE,
-        IERC20::commitmentsCall::SIGNATURE,
+        // IERC20::commitmentsCall::SIGNATURE,
         returns._0
     );
 
@@ -116,6 +118,8 @@ fn main() -> Result<()> {
 
     let env = ExecutorEnv::builder()
         .write(&view_call_input)
+        .unwrap()
+        .write(&account)
         .unwrap()
         .write(&private_secret_key)
         .unwrap()
@@ -126,6 +130,7 @@ fn main() -> Result<()> {
     let prover = default_prover();
     // Produce a receipt by proving the specified ELF binary.
     let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap();
+    receipt.verify();
 
     println!("Outputting receipt to local.receipt");
     let serialized = bincode::serialize(&receipt).unwrap();

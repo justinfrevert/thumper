@@ -17,11 +17,19 @@ use risc0_zkvm::{guest::env, serde};
 
 fn main() {
     // Fake contributors journal, for now, to test verification
+    // let contributors_count: u8 = env::read();
+
+    // // let mut new_participant_set: Vec<Vec<u8>> = vec![];
+
+    // for i in 0..contributors_count {
+    //     let contributors_journal: Vec<u8> = env::read();
+    //     env::verify(BALANCE_OF_ID, &contributors_journal).unwrap();
+
+    //     // TODO: Get Identity Commitment out of journal
+    // }
     let contributors_journal: Vec<u8> = env::read();
     env::verify(BALANCE_OF_ID, &contributors_journal).unwrap();
-    
-    let new_participant_set: Vec<Vec<u8>> = vec![];
 
     // Commit to set
-    env::commit(&new_participant_set);
+    // env::commit(&new_participant_set);
 }

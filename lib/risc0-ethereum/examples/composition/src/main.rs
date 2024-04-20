@@ -17,17 +17,22 @@ use risc0_zkvm::{default_prover, ExecutorEnv, Receipt};
 use std::fs;
 
 fn main() {
-    println!("Beginning Participant Set Preparation");
+    println!(" Participant Set Preparation");
 
     let identity_proof_bytes = fs::read("contributor.receipt").unwrap();
+    // let receipt_dir = "./contributor_receipts";
+    // let mut receipt_files = fs::read_dir(receipt_dir)
+    //     .unwrap()
+    //     .map(|res| res.map(|e| e.path()))
+    //     .collect::<Result<Vec<_>, std::io::Error>>()
+    //     .unwrap();
+
     let identity_receipt: Receipt = bincode::deserialize(&identity_proof_bytes).unwrap();
 
     println!("Received receipt");
 
     let env = ExecutorEnv::builder()
         .add_assumption(identity_receipt.clone())
-        // Manually add...
-        // .write(&1)
         .write(&identity_receipt.journal)
         .unwrap()
         .build()
