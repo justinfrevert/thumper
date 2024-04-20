@@ -1,0 +1,21 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 error pnpm": {
+    "code": "ELIFECYCLE",
+    "errno": "ENOENT",
+    "syscall": "spawn",
+    "file": "sh",
+    "pkgid": "bonsai-pay@0.1.0",
+    "stage": "dev",
+    "script": "vite --port 3000",
+    "pkgname": "bonsai-pay",
+    "err": {
+      "name": "Error",
+      "message": "bonsai-pay@0.1.0 dev: `vite --port 3000`\nspawn ENOENT",
+      "code": "ELIFECYCLE",
+      "stack": "Error: bonsai-pay@0.1.0 dev: `vite --port 3000`\nspawn ENOENT\n    at ChildProcess.<anonymous> (/home/justin/.node/corepack/pnpm/6.11.0/dist/pnpm.cjs:93073:22)\n    at ChildProcess.emit (events.js:400:28)\n    at maybeClose (internal/child_process.js:1088:16)\n    at Process.ChildProcess._handle.onexit (internal/child_process.js:296:5)"
+    }
+  }
+}

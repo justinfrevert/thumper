@@ -1,0 +1,17 @@
+[package]
+name = "ceremony_initiator"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+risc0-zkvm = { version = "0.21.0", default-features = false, features = ["std"]  }
+risc0-zkvm-platform = { version = "0.21.0", default-features = false }
+bls12_381 = { version  = "0.8.0", default-features = false, features = ["groups"] }
+
+ark-bls12-381 = { version = "0.4.0" }
+ark-ec = { version = "0.4.0"}
+ark-serialize = { version = "0.4.0" }
+
+smallvec = { version = "1.13.2", default-features = false }

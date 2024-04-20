@@ -1,0 +1,51 @@
+### Rust ###
+/target
+**/*.rs.bk
+
+### Cargo ###
+/Cargo.lock
+Cargo.lock
+
+### Node ###
+# Dependency directories
+node_modules/
+package-lock.json
+yarn.lock
+
+# build outputs
+/dist
+/build
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+### Ethereum ###
+# Truffle build artifacts
+/build/
+artifacts/
+
+# Hardhat cache
+/cache/
+coverage/
+
+# Bytecode outputs
+*.solc
+
+# Private keys and mnemonic files
+*.secret
+
+### Editor and OS ###
+# Editors
+.vscode/
+.idea/
+
+# Operating System
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
