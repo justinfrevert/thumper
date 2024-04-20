@@ -1,11 +1,11 @@
 [package]
-name = "composition-example"
+name = "set-initializer"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 composition-example-methods = { path = "methods" }
-erc20-counter-methods = { path = "../erc20-counter/methods" }
+erc20-counter-methods = { path = "../identity_prover/methods" }
 risc0-zkvm = { version = "0.21" }
 bincode = { workspace = true }
 serde = "1.0"
