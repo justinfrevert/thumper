@@ -37,7 +37,7 @@ Unfortunately, I did find as much time as I would have liked to spend on this ha
 - Ceremony Contributor:
    * Need to verify the receipt of the previous contribution
 * Set initializer:
-    * Need to get the proof composition working 
+    * Need to get the proof composition working. Need to use Bonsai to send the proof to the contract
 - ZKKYC Contract
    * Need to get the original ZKKYC contract integrated in a way this project can work with it
 
