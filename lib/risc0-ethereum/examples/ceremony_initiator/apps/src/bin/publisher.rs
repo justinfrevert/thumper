@@ -17,40 +17,29 @@
 // to your deployed app contract.
 
 use alloy_primitives::{address, Address};
+use alloy_primitives::U256;
 use alloy_sol_types::{sol, SolCall, SolInterface};
 use anyhow::Result;
-// use apps::{BonsaiProver, TxSender};
+use apps::{BonsaiProver, TxSender};
 use clap::Parser;
-use erc20_counter_methods::{BALANCE_OF_ID, BALANCE_OF_ELF};
+use erc20_counter_methods::{BALANCE_OF_ELF, BALANCE_OF_ID};
 use risc0_ethereum_view_call::{
     config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall,
 };
 use risc0_zkvm::serde::to_vec;
-use risc0_zkvm::{default_prover, ExecutorEnv, Receipt};
-use risc0_zkvm::sha::Digest;
+use risc0_zkvm::{ExecutorEnv};
+use risc0_zkvm::default_prover;
 use tracing_subscriber::EnvFilter;
-use serde::Serialize;
-use std::fs;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 /// Must match the guest code.
-const CONTRACT: Address = address!("41EE7701040a4206Af38786827E9863838F8D47f");
-
+const CONTRACT: Address = address!("Ad59e59419e78bD3AE1F6c1350EeF30567D9EA4A");
 const PROTOCOL_ID: u8 = 1;
 
 sol! {
-    /// ERC-20 balance function signature.
     interface IERC20 {
-        function balanceOf(address account) external view returns (uint);
-        // function commitments() external view returns (uint256[]);
         function commitments() external view returns (bytes32[]);
-    }
-}
-
-// `ICounter` interface automatically generated via the alloy `sol!` macro.
-sol! {
-    interface ICounter {
-        function increment(bytes calldata journal, bytes32 post_state_digest, bytes calldata seal);
+        function getCommitments() external view returns (bytes32[]);
     }
 }
 
@@ -79,10 +68,8 @@ struct Args {
     account: Address,
 
     #[clap(long, env)]
-    private_secret_key: String
+    secret_key: String,
 }
-
-
 
 fn main() -> Result<()> {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
@@ -91,6 +78,15 @@ fn main() -> Result<()> {
         .init();
     // parse the command line arguments
     let args = Args::parse();
+
+    // Create a new `TxSender`.
+    let tx_sender = TxSender::new(
+        args.chain_id,
+        &args.rpc_url,
+        &args.eth_wallet_private_key,
+        &args.contract,
+    )?;
+
     // Create a view call environment from an RPC endpoint and a block number. If no block number is
     // provided, the latest block is used. The `with_chain_spec` method is used to specify the
     // chain configuration.
@@ -98,14 +94,9 @@ fn main() -> Result<()> {
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
 
-    // Get args
-    let private_secret_key = args.private_secret_key;
     let account = args.account;
-
-    // let call = IERC20::fakeBalanceOfCall { account };
-    // let call = crate::fakeBalanceOfCall { account };
-    let call = IERC20::balanceOfCall { account };
-    // let call = IERC20::commitmentsCall {};
+    let secret_key = args.secret_key;
+    let call = IERC20::getCommitmentsCall { };
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
@@ -113,20 +104,18 @@ fn main() -> Result<()> {
     println!(
         "For block {} `{}` returns: {:?}",
         number,
-        IERC20::balanceOfCall::SIGNATURE,
-        // IERC20::fakeBalanceOfCall::SIGNATURE,
-        // IERC20::commitmentsCall::SIGNATURE,
+        IERC20::commitmentsCall::SIGNATURE,
         returns._0
     );
 
-    println!("With hidden private key as input: {:?}", private_secret_key);
+    // let (journal, post_state_digest, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
 
     let env = ExecutorEnv::builder()
         .write(&view_call_input)
         .unwrap()
         .write(&account)
         .unwrap()
-        .write(&private_secret_key.as_bytes())
+        .write(&secret_key.as_bytes())
         .unwrap()
         .build()
         .unwrap();
@@ -137,33 +126,35 @@ fn main() -> Result<()> {
     let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap();
     receipt.verify(BALANCE_OF_ID);
 
-    println!("Outputting receipt to local.receipt. Remember to place in lib/risc0-ethereum/examples/set_initializer/contributor_receipts so the coordinator can use it");
-    let serialized = bincode::serialize(&receipt).unwrap();
-    fs::write("local.receipt", serialized)?;
-    let commitment: Digest = receipt.journal.decode().expect(
-        "Journal output should deserialize into the same types (& order) that it was written",
-    );  
 
-    println!("Your identity commitment for protocol: {:?} is: {:?}", PROTOCOL_ID, commitment);
+    // let env = ExecutorEnv::builder()
+    //     .write(&input)
+    //     .unwrap()
+    //     .build()
+    //     .unwrap();
+
+    // Obtain the default prover.
+    // let prover = default_prover();
+    // Produce a receipt by proving the specified ELF binary.
+    // let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap().receipt;
+
+    println!("Done getting proof");
+
+    // // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
+    // let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
+    //     journal,
+    //     post_state_digest,
+    //     seal,
+    // })
+    // .abi_encode();
+
+    // println!("Done performing counter increment");
+
+
+    // // Send the calldata to Ethereum.
+    // let runtime = tokio::runtime::Runtime::new()?;
+    // runtime.block_on(tx_sender.send(calldata))?;
 
     Ok(())
 }
 
-pub struct InputBuilder {
-    input: Vec<u32>,
-}
-
-impl InputBuilder {
-    pub fn new() -> Self {
-        InputBuilder { input: Vec::new() }
-    }
-
-    pub fn write(mut self, input: impl serde::Serialize) -> Result<Self> {
-        self.input.extend(to_vec(&input)?);
-        Ok(self)
-    }
-
-    pub fn bytes(self) -> Vec<u8> {
-        bytemuck::cast_slice(&self.input).to_vec()
-    }
-}

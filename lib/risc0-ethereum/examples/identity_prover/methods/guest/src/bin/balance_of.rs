@@ -50,7 +50,7 @@ sol! {
 }
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
-const CONTRACT: Address = address!("fdfF9861c5E614566083708BCeAA5E8C3291fF10");
+const CONTRACT: Address = address!("41EE7701040a4206Af38786827E9863838F8D47f");
 
 const PROTOCOL_ID: u8 = 1;
 

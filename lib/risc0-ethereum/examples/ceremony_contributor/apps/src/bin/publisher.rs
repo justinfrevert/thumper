@@ -19,31 +19,26 @@
 use alloy_primitives::{address, Address};
 use alloy_sol_types::{sol, SolCall, SolInterface};
 use anyhow::Result;
-// use apps::{BonsaiProver, TxSender};
+use apps::{BonsaiProver, TxSender};
 use clap::Parser;
-use erc20_counter_methods::{BALANCE_OF_ID, BALANCE_OF_ELF};
+use erc20_counter_methods::BALANCE_OF_ELF;
 use risc0_ethereum_view_call::{
     config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall,
 };
 use risc0_zkvm::serde::to_vec;
-use risc0_zkvm::{default_prover, ExecutorEnv, Receipt};
-use risc0_zkvm::sha::Digest;
+use risc0_zkvm::{ExecutorEnv};
 use tracing_subscriber::EnvFilter;
-use serde::Serialize;
-use std::fs;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 /// Must match the guest code.
-const CONTRACT: Address = address!("41EE7701040a4206Af38786827E9863838F8D47f");
-
-const PROTOCOL_ID: u8 = 1;
+const CONTRACT: Address = address!("52d2c41283712021D514E2E73A263b6Be5E8F35f");
 
 sol! {
     /// ERC-20 balance function signature.
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
-        // function commitments() external view returns (uint256[]);
-        function commitments() external view returns (bytes32[]);
+        // function identityCommitments(uint protocolId) external view returns (uint256[]);
+        function identityCommitments(uint protocolId) external view returns (bytes32[]);
     }
 }
 
@@ -77,12 +72,7 @@ struct Args {
     /// Account address to read the balance_of on Ethereum
     #[clap(long)]
     account: Address,
-
-    #[clap(long, env)]
-    private_secret_key: String
 }
-
-
 
 fn main() -> Result<()> {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
@@ -91,6 +81,15 @@ fn main() -> Result<()> {
         .init();
     // parse the command line arguments
     let args = Args::parse();
+
+    // Create a new `TxSender`.
+    let tx_sender = TxSender::new(
+        args.chain_id,
+        &args.rpc_url,
+        &args.eth_wallet_private_key,
+        &args.contract,
+    )?;
+
     // Create a view call environment from an RPC endpoint and a block number. If no block number is
     // provided, the latest block is used. The `with_chain_spec` method is used to specify the
     // chain configuration.
@@ -98,14 +97,12 @@ fn main() -> Result<()> {
         EthViewCallEnv::from_rpc(&args.rpc_url, None)?.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
     let number = env.header().number();
 
-    // Get args
-    let private_secret_key = args.private_secret_key;
+    // Function to call
     let account = args.account;
-
     // let call = IERC20::fakeBalanceOfCall { account };
     // let call = crate::fakeBalanceOfCall { account };
-    let call = IERC20::balanceOfCall { account };
-    // let call = IERC20::commitmentsCall {};
+    // let call = IERC20::balanceOfCall { account };
+    let call = IERC20::commitmentsCall {};
 
     // Preflight the view call to construct the input that is required to execute the function in
     // the guest. It also returns the result of the call.
@@ -113,38 +110,51 @@ fn main() -> Result<()> {
     println!(
         "For block {} `{}` returns: {:?}",
         number,
-        IERC20::balanceOfCall::SIGNATURE,
+        // IERC20::balanceOfCall::SIGNATURE,
         // IERC20::fakeBalanceOfCall::SIGNATURE,
-        // IERC20::commitmentsCall::SIGNATURE,
+        IERC20::commitmentsCall::SIGNATURE,
         returns._0
     );
 
-    println!("With hidden private key as input: {:?}", private_secret_key);
+    println!("Taking view call and putting into prover");
 
-    let env = ExecutorEnv::builder()
-        .write(&view_call_input)
+    // Send an off-chain proof request to the Bonsai proving service.
+    let input = InputBuilder::new()
+        .write(view_call_input)
         .unwrap()
-        .write(&account)
+        .write(account)
         .unwrap()
-        .write(&private_secret_key.as_bytes())
-        .unwrap()
-        .build()
-        .unwrap();
+        .bytes();
+
+    let (journal, post_state_digest, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
+
+    // let env = ExecutorEnv::builder()
+    //     .write(&input)
+    //     .unwrap()
+    //     .build()
+    //     .unwrap();
 
     // Obtain the default prover.
-    let prover = default_prover();
+    // let prover = default_prover();
     // Produce a receipt by proving the specified ELF binary.
-    let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap();
-    receipt.verify(BALANCE_OF_ID);
+    // let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap().receipt;
 
-    println!("Outputting receipt to local.receipt. Remember to place in lib/risc0-ethereum/examples/set_initializer/contributor_receipts so the coordinator can use it");
-    let serialized = bincode::serialize(&receipt).unwrap();
-    fs::write("local.receipt", serialized)?;
-    let commitment: Digest = receipt.journal.decode().expect(
-        "Journal output should deserialize into the same types (& order) that it was written",
-    );  
+    println!("Done getting proof");
 
-    println!("Your identity commitment for protocol: {:?} is: {:?}", PROTOCOL_ID, commitment);
+    // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
+    let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
+        journal,
+        post_state_digest,
+        seal,
+    })
+    .abi_encode();
+
+    println!("Done performing counter increment");
+
+
+    // Send the calldata to Ethereum.
+    let runtime = tokio::runtime::Runtime::new()?;
+    runtime.block_on(tx_sender.send(calldata))?;
 
     Ok(())
 }

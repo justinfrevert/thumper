@@ -18,23 +18,26 @@ pragma solidity ^0.8.20;
 
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
+import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
+import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 
-import {zkKYC} from "../contracts/zkkyc.sol";
-import {Coordinator} from "../contracts/coordinator.sol";
+import {ERC20} from "../contracts/ERC20.sol";
 
-contract zkKYCDeploy is Script {
+/// @notice Deployment script for the ERC20 TOYKEN contract.
+/// @dev Use the following environment variable to control the deployment:
+///     * ETH_WALLET_PRIVATE_KEY private key of the wallet to be used for deployment.
+///
+/// See the Foundry documentation for more information about Solidity scripts.
+/// https://book.getfoundry.sh/tutorials/solidity-scripting
+contract ERC20Deploy is Script {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
 
         vm.startBroadcast(deployerKey);
 
-        zkKYC dummyZkKYC = new zkKYC("ZKKYC", "ZKYC");
-        console2.log("Deployed zkKYC dummyzkKYC to", address(dummyZkKYC));
-        console2.log("export ZKKYC_ADDRESS=", address(dummyZkKYC));
-
-        Coordinator coordinator = new Coordinator();
-        console2.log("Deployed Coordinator to", address(coordinator));
-        console2.log("export COORDINATOR_ADDRESS=", address(coordinator));
+        ERC20 toyken = new ERC20("TOYKEN", "TOY", 0);
+        console2.log("Deployed ERC20 TOYKEN to", address(toyken));
+        console2.log("export TOYKEN_ADDRESS=", address(toyken));
 
         vm.stopBroadcast();
     }

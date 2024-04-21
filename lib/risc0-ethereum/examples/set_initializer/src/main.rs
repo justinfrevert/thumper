@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use composition_example_methods::{EXPONENTIATE_ELF, EXPONENTIATE_ID};
+use set_initializer_methods::{EXPONENTIATE_ELF, EXPONENTIATE_ID};
 use risc0_zkvm::{default_prover, ExecutorEnv, Receipt};
 use std::fs;
 use risc0_zkvm::sha::Digest;

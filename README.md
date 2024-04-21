@@ -32,23 +32,135 @@ Goals
 - KZG and then later Groth16
 
 # Running
+## Deploy on a local network
 
-1. Start local node with contracts
-    a. Follow instructions in lib/risc0-ethereum/examples/erc20-counter/deployment-guide.md to start ganache local node
-    a. *New terminal*: cd to lib/risc0-ethereum/examples/erc20-counter
-    b. cargo build
-    c.  forge script --rpc-url http://localhost:8545 --broadcast script/DeployERC20.s.sol
-    d. Follow remaining instructions
+Perform the following in `lib/risc0-ethereum/examples/identity_prover`
 
-1. Start local node with contracts
-    a. cd to `contracts`
-    b. `anvil`
-    c. Separate terminal: `ETH_WALLET_PRIVATE_KEY="$PRIVATE_KEY" forge script --rpc-url http://localhost:8545 --broadcast script/Deploy.s.sol`
-2. Query state from the node verifiably
-    a. Separate terminal
-    b. cd to `lib/risc0-ethereum/examples/erc20$`
-    c. `RPC_URL=http://127.0.0.1:8545 RUST_LOG=info cargo run --release`
+1. Install `ganache`: 
+    You must first install [Node.js] >= v16.0.0 and npm >= 7.10.0.
+    To install Ganache globally, run:
+    ```
+    npm install ganache --global
+    ```
+
+2. Start a local testnet with `ganache` by running:
+
+    ```bash
+    ganache
+    ```
+
+    Once ganache is started, look at its logs and copy any of the Private Keys. You'll need one for the next step.
+    Then, keep it running in the terminal, and switch to a new terminal.
+
+2. Set your environment variables:
+    > ***Note:*** *This requires having access to a Bonsai API Key. To request an API key [complete the form here](https://bonsai.xyz/apply).*
+
+    ```bash
+    # Ganache sets up a number of private keys, use the one you copied during the previous step.
+    export ETH_WALLET_PRIVATE_KEY="YOUR_GANACHE_PRIVATE_KEY"
+    export BONSAI_API_KEY="YOUR_API_KEY" # see form linked in the previous section
+    export BONSAI_API_URL="BONSAI_API_URL" # provided with your api key
+    ```
+
+4. Deploy the dummy zkkyc contract, as well as the coordinator contract.
+    ```
+    forge script --rpc-url http://localhost:8545 --broadcast script/DeployProject.s.sol
+    ```
+    Save the `ERC721 ZKKYC` and `COORDINATOR_ADDRESS` contract addresses to an env variable:
+    ```
+    export ZKKYC_ADDRESS=# Copy zkkyc token address
+    export COORDINATOR_ADDRESS=# Copy zkkyc token address
+    ```
 
 
-TODOS:
+5. Mint some dummy zkkyc'ed identities:
+    ```
+
+    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7 0x2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
+
+    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0xa527546eBF9faa960C7f287561a1ECE8298beB15 0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
+
+    ```
+
+6. Populate Some ceremony participants(should be outputs from `identity_prover`)
+```
+cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $COORDINATOR_ADDRESS 'updateIdentityCommitments(uint256,bytes32[])' 1 "[0x994368d0308f9dcdc1f30a18d8fe2c371a8eb199c64f21fdfe28b469cd8ee97d, 0x1eaa1e5f20ccc915f7190ff9e5126e09870ec7bab852cf9d801b1c01641139af]"
+
+```
+
+3. Build the project:
+    
+    Before building the project, make sure the contract address on both the [methods/guest/src/bin/balance_of.rs] as well [apps/src/bin/publisher.rs] is set to the value of your deployed `ZKKYC_ADDRESS`:
+
+    ```rust
+    const CONTRACT: Address = address!("<PLACE YOUR TOYKEN ADDRESS HERE>");
+    ```
+    
+    Then run:
+
+    ```bash
+    cargo build
+    ```
+
+### Interact with your local deployment
+
+1. Query the state:
+
+    ```bash
+    cast call --rpc-url http://localhost:8545 ${ZKKYC_ADDRESS:?} 'get()(uint256)'
+    ```
+
+2. Publish a new state/get a view call + identity proof for the identity guest program
+Note that the private secret key is a different argument from the ETH_WALLET_PRIVATE_KEY in that it just represents the zkkycced account you can attest to owning.
+You can also pass in the private secret key 
+
+    ```bash
+    cargo run --bin publisher -- \
+        --chain-id=1337 \
+        --rpc-url=http://localhost:8545 \
+        --contract=${ZKKYC_ADDRESS:?} \
+        --account=0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7 \
+        --private-secret-key=0x447db9e9f28d0be24e439f4c5437c3321884ba000dddc3949b0dbb4f12380a6b
+    ```
+
+    and for the second account we minted an "identity" for
+    ```bash
+    cargo run --bin publisher -- \
+        --chain-id=1337 \
+        --rpc-url=http://localhost:8545 \
+        --contract=${ZKKYC_ADDRESS:?} \
+        --account=0xa527546eBF9faa960C7f287561a1ECE8298beB15 \
+        --private-secret-key=0xf3d540f79c72415e0d5eebb2a23bf7f87613ee6b83ad48d3ec102e614e656aa2
+    ```
+
+3. Query the state again to see the change:
+
+    ```bash
+    cast call --rpc-url http://localhost:8545 ${ZKKYC_ADDRESS:?} 'get()(uint256)'
+    ```
+
+4. Publish a new state/get a view call + perform the initial ceremony contribution
+In a *separate terminal*, ensure you have $COORDINATOR_ADDRESS set to the coordinator contract we deployed earlier(Step 4.), and cd to `/lib/risc0-ethereum/examples/ceremony_initiator`
+
+    ```bash
+    cargo run --bin publisher -- \
+        --chain-id=1337 \
+        --rpc-url=http://localhost:8545 \
+        --contract=${COORDINATOR_ADDRESS:?} \
+        --account=0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7 \
+        --secret-key=0x447db9e9f28d0be24e439f4c5437c3321884ba000dddc3949b0dbb4f12380a6b
+    ```
+
+    and for the second account we minted an "identity" for
+    ```bash
+    cargo run --bin publisher -- \
+        --chain-id=1337 \
+        --rpc-url=http://localhost:8545 \
+        --contract=${COORDINATOR_ADDRESS:?} \
+        --account=0xa527546eBF9faa960C7f287561a1ECE8298beB15 \
+        --secret-key=0xf3d540f79c72415e0d5eebb2a23bf7f87613ee6b83ad48d3ec102e614e656aa2
+    ```
+
+
+# TODOS:
 - Prove you own the account inside of the guest which queries the zkkyc contract
