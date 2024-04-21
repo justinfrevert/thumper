@@ -6,32 +6,55 @@ Like the [KZG summoning ceremony]([url](https://ceremony.ethereum.org/)), this p
 
 *In the vast expanse of the known universe, there exists a desert planet called Arrakis, more commonly known as Dune. Its landscape is a sprawling sea of sand and home to the Fremen, a tribe of hardy people who have adapted to the harsh environment. Within the sands live the colossal sandworms, creatures of the deep desert, and worshipped by the Fremen as the keepers of Arrakis.*
 
-*The Fremen have mastered the art of summoning these behemoths through a device known as a 'thumper'. When activated, the Fremen remains at bay. The thumper pounds the desert floor with a rhythmic, and steady cadence, each beat a call through the sands. The sandworms, attuned to the vibrations, are drawn to the surface, interpreting the rhythm as a challenge to their domain. Each invocation of the thumper must be precise, its rhythm unerring, for the sandworms are not easily fooled, and the penalty for a misstep is dire.*
+*The Fremen have mastered the art of summoning these behemoths through a device known as a 'thumper'. When activated, The thumper pounds the desert floor with a rhythmic, and steady cadence, each beat a call through the sands. The sandworms, attuned to the vibrations, are drawn to the surface, interpreting the rhythm as a challenge to their domain. Each invocation of the thumper must be precise, its rhythm unerring, for the sandworms are not easily fooled, and the penalty for a misstep is dire.*
 
+*Fremen have a concept describing the oneness of a community, and is associated with spiritual and communal ceremonies. That term is known as [Tau]([url](https://dune.fandom.com/wiki/Tau)). Violating Tau results in expulsion from a community.*
 
-State Call
-- In `lib/risc0-ethereum/examples/erc20`
-- RPC_URL=https://eth-sepolia.g.alchemy.com/v2/{API_KEY} RUST_LOG=info cargo run --release
+## Introduction
+This project attempts to implement a ZKVM-based trusted setup ceremony, utilizing contributor identity privacy, all secured by ZKKYC.
 
+## Overall Structure
+Most of the project was adapted from risc-ethereum example boilerplate, so project code currently still sits in `./lib/risc0-ethereum`
+```
+thumper
+│
+└───lib/risc0-ethereum/examples # Project directory
+│   │   ceremony_contributor # Locally-run ZKVM program that checks whether a preimage for an identity commitment is ready to participate, if so, it contributes randomness
+│   │   ceremony_initiator # Locally-run ZKVM program that checks whether a preimage for an identity commitment is the initiator, if so, it initiates the contributions
+│   │   identity_prover # Locally-run ZKVM program which checks whether the account owns a ZKKYC'ed identity, and if so, creates a ceremony-specific (private)identity commitment
+│       └───contracts
+│           │   zkkyc.sol. # A non-verifying version of the zkkyc which exists for us to make requests to in order to check that the view call can correctly retrieve zkkyc tokens and interpret in the guest
+│           │   coordinator.sol # A contract meant to house ceremony coordination logic. Contains the set of participants(list ceremony-specific identity commitments)
+│   │   set_initializer # Locally-run ZKVM program(meant to be Bonsai) which aggregates some amount of identity proofs and forms a set of contributors for a ceremony to put onchain
+└───offchain # UNUSED
+└───contracts # UNUSED
+```
 
-Overall Structure
-- ./lib/risc0-ethereum/examples
-    Main components consisting of the zkvm contributor steps
-- lib/risc0-ethereum/examples/identity_prover/contracts
-    Contracts for this project: zkkyc and coordinator
+## Status and TODOS
+Unfortunately, I did find as much time as I would have liked to spend on this hackathon. See the status of various components at the time of submission:
+- Identity Prover:
+   * Need to verify ownership of the account id used for ZKKYC retrieval, based on the priavate key we are passing
+- Ceremony Contributor:
+   * Need to verify the receipt of the previous contribution
+* Set initializer:
+    * Need to get the proof composition working 
+- ZKKYC Contract
+   * Need to get the original ZKKYC contract integrated in a way this project can work with it
 
-Goals
+## Goals
 - Non-Centralized Coordinator
     via your choice of
         - Onchain coordinator
         - ZKVM coordinator
 - EVM-friendly Sybil Resistance through private-but-proven KYC'ed identities
 - KZG and then later Groth16
+- Multiple contributions per participant-step, and random selection out of previous contributor's contributions.
+- Commitment to set of contributors instead of list
 
 # Running
 ## Deploy on a local network
 
-Perform the following in `lib/risc0-ethereum/examples/identity_prover`
+Steps begin with someone proving privately that they have a zkkyc'ed identity in `identity_prover`. Perform the following in `lib/risc0-ethereum/examples/identity_prover`
 
 1. Install `ganache`: 
     You must first install [Node.js] >= v16.0.0 and npm >= 7.10.0.
@@ -161,7 +184,3 @@ cargo run --bin publisher -- \
 ```
 
 
-# TODOS:
-There were some notable things I had to skip and come back to later
-- Prove you own the account inside of the guest which queries the zkkyc contract
-- Prove you know the preimage for the identity commitment of the participant who's turn it is right now
