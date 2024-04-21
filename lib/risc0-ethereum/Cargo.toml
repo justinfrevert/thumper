@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["build", "contracts", "ffi", "relay", "relay/tests/methods", "view-call", "examples/set_initializer", "examples/identity_prover/apps"]
+members = ["build", "contracts", "ffi", "relay", "relay/tests/methods", "view-call", "examples/set_initializer", "examples/identity_prover/apps", "examples/composition"]
 
 
 [workspace.package]

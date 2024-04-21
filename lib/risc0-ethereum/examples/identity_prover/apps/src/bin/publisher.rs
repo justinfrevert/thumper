@@ -27,13 +27,14 @@ use risc0_ethereum_view_call::{
 };
 use risc0_zkvm::serde::to_vec;
 use risc0_zkvm::{default_prover, ExecutorEnv, Receipt};
+use risc0_zkvm::sha::Digest;
 use tracing_subscriber::EnvFilter;
 use serde::Serialize;
 use std::fs;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 /// Must match the guest code.
-const CONTRACT: Address = address!("F66a26e6D7A310bdb8E34fF028568B1D5e59cA43");
+const CONTRACT: Address = address!("fdfF9861c5E614566083708BCeAA5E8C3291fF10");
 
 sol! {
     /// ERC-20 balance function signature.
@@ -121,7 +122,7 @@ fn main() -> Result<()> {
         .unwrap()
         .write(&account)
         .unwrap()
-        .write(&private_secret_key)
+        .write(&private_secret_key.as_bytes())
         .unwrap()
         .build()
         .unwrap();
@@ -132,15 +133,13 @@ fn main() -> Result<()> {
     let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap();
     receipt.verify(BALANCE_OF_ID);
 
-    println!("Outputting receipt to local.receipt");
+    println!("Outputting receipt to local.receipt. Remember to place in lib/risc0-ethereum/examples/set_initializer/contributor_receipts so the coordinator can use it");
     let serialized = bincode::serialize(&receipt).unwrap();
     fs::write("local.receipt", serialized)?;
+    let _committed_values: Digest = receipt.journal.decode().expect(
+        "Journal output should deserialize into the same types (& order) that it was written",
+    );  
 
-    // let committed_values: Vec<u8> = receipt.journal.decode().expect(
-    //     "Journal output should deserialize into the same types (& order) that it was written",
-    // );
-
-    // println!("Journal is: {:?}", committed_values);
 
     Ok(())
 }

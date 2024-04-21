@@ -14,14 +14,29 @@
 
 use erc20_counter_methods::BALANCE_OF_ID;
 use risc0_zkvm::{guest::env, serde};
+use risc0_zkvm::sha::Digest;
+use crate::serde::from_slice;
 
 fn main() {
-    let contributors_count: u8 = env::read();
-    for i in 0..contributors_count {
-        let contributors_journal: Vec<u8> = env::read();
-        env::verify(BALANCE_OF_ID, &contributors_journal).unwrap();
-    }
+    // let contributors_count: u8 = env::read();
+    // let mut participants = vec![];
+
+    // // let mut single_com: Digest = Default::default();
+
+    // for i in 0..contributors_count {
+    //     let contributors_journal: Vec<u8> = env::read();
+    //     env::verify(BALANCE_OF_ID, &contributors_journal).unwrap();
+    //     // let recreated_journal = Journal::new(contributors_journal);
+    //     // let identity_commitment: Digest = recreated_journal.decode();
+    //     let identity_commitment: Digest = from_slice(&contributors_journal).unwrap();
+    //     // env::commit(identity_commitment);
+    //     participants.push(identity_commitment);
+    //     // single_com = identity_commitment;
+    // }
+
+    let contributors_journal_value: Digest = env::read();
+    env::verify(BALANCE_OF_ID, &serde::to_vec(&contributors_journal_value).unwrap()).unwrap();
 
     // Commit to set
-    // env::commit(&new_participant_set);
+    // env::commit(&single_com);
 }

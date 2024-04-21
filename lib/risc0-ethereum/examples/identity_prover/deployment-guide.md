@@ -41,7 +41,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
 
 4. Deploy the zkkyc contract
     ```
-    forge script --rpc-url http://localhost:8545 --broadcast script/DeployERC721.s.sol
+    forge script --rpc-url http://localhost:8545 --broadcast script/DeployProject.s.sol
     ```
     Save the `ERC721 ZKKYC` contract address to an env variable:
     ```
@@ -54,19 +54,15 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     > export TOYKEN_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "ERC20") | .contractAddress' ./broadcast/DeployERC20.s.sol/1337/run-latest.json)
     > ```
 
-5. Mint some Toyken:
+5. Mint some dummy zkkyc'ed identities:
     ```
-    feel free to use these hashed keys:
-    2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
-    afc4a4c32e81c86131ac00f137cde88848fbead71f4f16ab30f7a7b3f5d99239
-    0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
 
-    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4 0x2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
+    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7 0x2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
 
-    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0xb07420f9751D5E0026bE5C3fcFb82B4D4Afcbfb8 0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
+    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0xa527546eBF9faa960C7f287561a1ECE8298beB15 0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
 
     ```
-    > Now the account at address `0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4` should have 100 Toyken.
+    > Now the account at address `0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7` should have 100 Toyken.
 
 3. Build the project:
     
@@ -90,14 +86,17 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     cast call --rpc-url http://localhost:8545 ${COUNTER_ADDRESS:?} 'get()(uint256)'
     ```
 
-2. Publish a new state/get a view call proof for the identity guest program
+2. Publish a new state/get a view call + identity proof for the identity guest program
+Note that the private secret key is a different argument from the ETH_WALLET_PRIVATE_KEY in that it just represents the zkkycced account you can attest to owning.
+You can also pass in the private secret key 
 
     ```bash
     cargo run --bin publisher -- \
         --chain-id=1337 \
         --rpc-url=http://localhost:8545 \
         --contract=${COUNTER_ADDRESS:?} \
-        --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
+        --account=0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7 \
+        --private-secret-key=0x447db9e9f28d0be24e439f4c5437c3321884ba000dddc3949b0dbb4f12380a6b
     ```
 
     and for the second account we minted an "identity" for
@@ -106,7 +105,8 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
         --chain-id=1337 \
         --rpc-url=http://localhost:8545 \
         --contract=${COUNTER_ADDRESS:?} \
-        --account=0xb07420f9751D5E0026bE5C3fcFb82B4D4Afcbfb8
+        --account=0xa527546eBF9faa960C7f287561a1ECE8298beB15 \
+        --private-secret-key=0xf3d540f79c72415e0d5eebb2a23bf7f87613ee6b83ad48d3ec102e614e656aa2
     ```
 
 3. Query the state again to see the change:
@@ -187,7 +187,7 @@ You can deploy the Counter contract on a testnet such as `Sepolia` and run an en
         --chain-id=11155111 \
         --rpc-url=https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY:?} \
         --contract=${COUNTER_ADDRESS:?} \
-        --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
+        --account=0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7
     ```
 
 3. Query the state again to see the change:
