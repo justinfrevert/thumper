@@ -21,7 +21,7 @@ use alloy_sol_types::{sol, SolCall, SolInterface};
 use anyhow::Result;
 // use apps::{BonsaiProver, TxSender};
 use clap::Parser;
-use erc20_counter_methods::BALANCE_OF_ELF;
+use erc20_counter_methods::{BALANCE_OF_ID, BALANCE_OF_ELF};
 use risc0_ethereum_view_call::{
     config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthViewCallEnv, EvmHeader, ViewCall,
 };
@@ -33,7 +33,7 @@ use std::fs;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 /// Must match the guest code.
-const CONTRACT: Address = address!("CB075B2fa7991C8178Dd5640f0C98c0AB1DBfE0c");
+const CONTRACT: Address = address!("F66a26e6D7A310bdb8E34fF028568B1D5e59cA43");
 
 sol! {
     /// ERC-20 balance function signature.
@@ -130,7 +130,7 @@ fn main() -> Result<()> {
     let prover = default_prover();
     // Produce a receipt by proving the specified ELF binary.
     let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap();
-    receipt.verify();
+    receipt.verify(BALANCE_OF_ID);
 
     println!("Outputting receipt to local.receipt");
     let serialized = bincode::serialize(&receipt).unwrap();

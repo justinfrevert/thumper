@@ -39,14 +39,12 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     export BONSAI_API_URL="BONSAI_API_URL" # provided with your api key
     ```
 
-4. Deploy the ERC20 Toyken contract:
+4. Deploy the zkkyc contract
     ```
-    forge script --rpc-url http://localhost:8545 --broadcast script/DeployERC20.s.sol
     forge script --rpc-url http://localhost:8545 --broadcast script/DeployERC721.s.sol
     ```
-    Save the `ERC20 Toyken` contract address to an env variable:
+    Save the `ERC721 ZKKYC` contract address to an env variable:
     ```
-    export TOYKEN_ADDRESS=#COPY ERC20 TOYKEN ADDRESS FROM DEPLOY LOGS
     export ZKKYC_ADDRESS=# Copy zkkyc token address
     ```
 
@@ -58,13 +56,14 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
 
 5. Mint some Toyken:
     ```
-    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $TOYKEN_ADDRESS 'mint(address, uint256)' 0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4 100
-    feel free to use these:
+    feel free to use these hashed keys:
     2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
     afc4a4c32e81c86131ac00f137cde88848fbead71f4f16ab30f7a7b3f5d99239
     0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
 
     cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4 0x2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
+
+    cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0xb07420f9751D5E0026bE5C3fcFb82B4D4Afcbfb8 0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
 
     ```
     > Now the account at address `0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4` should have 100 Toyken.
@@ -83,34 +82,6 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     cargo build
     ```
 
-4. Deploy the Counter contract by running:
-
-    ```bash
-    forge script --rpc-url http://localhost:8545 --broadcast script/DeployCounter.s.sol
-    ```
-
-    This command should output something similar to:
-
-    ```bash
-    ...
-    == Logs ==
-    Deployed RiscZeroGroth16Verifier to 0x5FbDB2315678afecb367f032d93F642f64180aa3
-    Deployed Counter to 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-    ...
-    ```
-
-    Save the `Counter` contract address to an env variable:
-
-    ```bash
-    export COUNTER_ADDRESS=#COPY COUNTER ADDRESS FROM DEPLOY LOGS
-    ```
-
-    > You can also use the following command to set the contract address if you have [`jq`][jq] installed:
-    >
-    > ```bash
-    > export COUNTER_ADDRESS=$(jq -re '.transactions[] | select(.contractName == "Counter") | .contractAddress' ./broadcast/DeployCounter.s.sol/1337/run-latest.json)
-    > ```
-
 ### Interact with your local deployment
 
 1. Query the state:
@@ -119,7 +90,7 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
     cast call --rpc-url http://localhost:8545 ${COUNTER_ADDRESS:?} 'get()(uint256)'
     ```
 
-2. Publish a new state
+2. Publish a new state/get a view call proof for the identity guest program
 
     ```bash
     cargo run --bin publisher -- \
@@ -127,6 +98,15 @@ You can deploy your contracts and run an end-to-end test or demo as follows:
         --rpc-url=http://localhost:8545 \
         --contract=${COUNTER_ADDRESS:?} \
         --account=0x9737100D2F42a196DE56ED0d1f6fF598a250E7E4
+    ```
+
+    and for the second account we minted an "identity" for
+    ```bash
+    cargo run --bin publisher -- \
+        --chain-id=1337 \
+        --rpc-url=http://localhost:8545 \
+        --contract=${COUNTER_ADDRESS:?} \
+        --account=0xb07420f9751D5E0026bE5C3fcFb82B4D4Afcbfb8
     ```
 
 3. Query the state again to see the change:
@@ -155,7 +135,7 @@ You can deploy the Counter contract on a testnet such as `Sepolia` and run an en
     Before building the project, make sure the contract address on both the [methods/guest/src/bin/balance_of.rs] as well [apps/src/bin/publisher.rs] is set to `aA8E23Fb1079EA71e0a56F48a2aA51851D8433D0`
     
     ```rust
-    const CONTRACT: Address = address!("52d2c41283712021D514E2E73A263b6Be5E8F35f");
+    const CONTRACT: Address = address!("F66a26e6D7A310bdb8E34fF028568B1D5e59cA43");
     ```
     
     Then run:
