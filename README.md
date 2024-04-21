@@ -15,13 +15,10 @@ State Call
 
 
 Overall Structure
-- Contracts - The onchain coordinator/identity contracts
-    - coordinator - verifies proofs of `identity-aggregator`, accepting private sets of ceremony participants to a given protocol, establishing the order of contributions
-- offchain - offchain zkvm hosts and guests
-    - identity-attestor - Reads an onchain identity and creates a commitment to it that is specific to a new protocol
-    - identity-aggregator - verifies multiple identities in order to prepare them to register as a set of participants
-    - ceremony-initializer - Creates the first ceremony contribution by privately verifying the participant is the correct member of the set
-    - ceremony-contributor - Creates n+1th contributions to the ceremony by privately proving the participants i the correct member of the set, receiving previous contributions and adding to it.
+- ./lib/risc0-ethereum/examples
+    Main components consisting of the zkvm contributor steps
+- lib/risc0-ethereum/examples/identity_prover/contracts
+    Contracts for this project: zkkyc and coordinator
 
 Goals
 - Non-Centralized Coordinator
@@ -58,15 +55,13 @@ Perform the following in `lib/risc0-ethereum/examples/identity_prover`
     ```bash
     # Ganache sets up a number of private keys, use the one you copied during the previous step.
     export ETH_WALLET_PRIVATE_KEY="YOUR_GANACHE_PRIVATE_KEY"
-    export BONSAI_API_KEY="YOUR_API_KEY" # see form linked in the previous section
-    export BONSAI_API_URL="BONSAI_API_URL" # provided with your api key
     ```
 
 4. Deploy the dummy zkkyc contract, as well as the coordinator contract.
     ```
     forge script --rpc-url http://localhost:8545 --broadcast script/DeployProject.s.sol
     ```
-    Save the `ERC721 ZKKYC` and `COORDINATOR_ADDRESS` contract addresses to an env variable:
+    Save the `ERC721 ZKKYC` and `COORDINATOR_ADDRESS` contract addresses to an env variable(see logs near top of output)
     ```
     export ZKKYC_ADDRESS=# Copy zkkyc token address
     export COORDINATOR_ADDRESS=# Copy zkkyc token address
@@ -75,17 +70,14 @@ Perform the following in `lib/risc0-ethereum/examples/identity_prover`
 
 5. Mint some dummy zkkyc'ed identities:
     ```
-
     cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7 0x2bcf9d7c56545585f04d5567d8c8a4fd01f8d405a0d2bc7a043ad6d4ab3e1430
 
     cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $ZKKYC_ADDRESS 'mint(address,bytes32)' 0xa527546eBF9faa960C7f287561a1ECE8298beB15 0174073c906caf76c5a587877e936875ad2960de2c0816eb844e02683dd52cd8
-
     ```
 
 6. Populate Some ceremony participants(should be outputs from `identity_prover`)
 ```
 cast send --private-key $ETH_WALLET_PRIVATE_KEY --rpc-url http://localhost:8545 $COORDINATOR_ADDRESS 'updateIdentityCommitments(uint256,bytes32[])' 1 "[0x994368d0308f9dcdc1f30a18d8fe2c371a8eb199c64f21fdfe28b469cd8ee97d, 0x1eaa1e5f20ccc915f7190ff9e5126e09870ec7bab852cf9d801b1c01641139af]"
-
 ```
 
 3. Build the project:
@@ -142,6 +134,7 @@ You can also pass in the private secret key
 4. Publish a new state/get a view call + perform the initial ceremony contribution
 In a *separate terminal*, ensure you have $COORDINATOR_ADDRESS set to the coordinator contract we deployed earlier(Step 4.), and cd to `/lib/risc0-ethereum/examples/ceremony_initiator`
 
+Using the first identity specifically, as it is the initator:
     ```bash
     cargo run --bin publisher -- \
         --chain-id=1337 \
@@ -151,16 +144,24 @@ In a *separate terminal*, ensure you have $COORDINATOR_ADDRESS set to the coordi
         --secret-key=0x447db9e9f28d0be24e439f4c5437c3321884ba000dddc3949b0dbb4f12380a6b
     ```
 
-    and for the second account we minted an "identity" for
-    ```bash
-    cargo run --bin publisher -- \
-        --chain-id=1337 \
-        --rpc-url=http://localhost:8545 \
-        --contract=${COORDINATOR_ADDRESS:?} \
-        --account=0xa527546eBF9faa960C7f287561a1ECE8298beB15 \
-        --secret-key=0xf3d540f79c72415e0d5eebb2a23bf7f87613ee6b83ad48d3ec102e614e656aa2
-    ```
+Note the contribution.receipt file, and place it into `lib/risc0-ethereum/examples/ceremony_contributor`
+
+
+5. Publish a new state/get a view call + perform the ceremony contribution
+In a *separate terminal*, ensure you have $COORDINATOR_ADDRESS set to the coordinator contract we deployed earlier(Step 4.), and cd to `lib/risc0-ethereum/examples/ceremony_contributor`
+
+Using the second identity:
+```bash
+cargo run --bin publisher -- \
+    --chain-id=1337 \
+    --rpc-url=http://localhost:8545 \
+    --contract=${COORDINATOR_ADDRESS:?} \
+    --account=0xa527546eBF9faa960C7f287561a1ECE8298beB15 \
+    --secret-key=0xf3d540f79c72415e0d5eebb2a23bf7f87613ee6b83ad48d3ec102e614e656aa2
+```
 
 
 # TODOS:
+There were some notable things I had to skip and come back to later
 - Prove you own the account inside of the guest which queries the zkkyc contract
+- Prove you know the preimage for the identity commitment of the participant who's turn it is right now

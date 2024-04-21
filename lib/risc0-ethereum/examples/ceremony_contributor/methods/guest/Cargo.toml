@@ -19,6 +19,7 @@ risc0-ethereum-view-call = { path = "../../../../view-call" }
 ark-bls12-381 = { version = "0.4.0" }
 ark-ec = { version = "0.4.0"}
 ark-serialize = { version = "0.4.0" }
+
 sha2 = "0.10.8"
 
 # Force the `compile-time-rng` feature, to prevent `getrandom` from being used.

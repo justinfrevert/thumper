@@ -34,7 +34,7 @@ use std::fs;
 
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 /// Must match the guest code.
-const CONTRACT: Address = address!("41EE7701040a4206Af38786827E9863838F8D47f");
+const CONTRACT: Address = address!("C6Ec78C3Ca971146706De9616E0F22248BE2b929");
 
 const PROTOCOL_ID: u8 = 1;
 

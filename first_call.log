@@ -1,5 +1,0 @@
-45' --contract=0xb86bb35e6a4E774216Ab2FA82c07Be78376e51f4 --account=0x83bF19D749cb807c19B4a6dF8e30fed56E158DD7 --private-secret-key=0x447db9e9f28d0be24e439f4c5437c3321884ba000dddc3949b0dbb4f12380a6b`
-For block 3 `balanceOf(address)` returns: 0x0000000000000000000000000000000000000000000000000000000000000001_U256
-With hidden private key as input: "0x447db9e9f28d0be24e439f4c5437c3321884ba000dddc3949b0dbb4f12380a6b"
-Outputting receipt to local.receipt. Remember to place in lib/risc0-ethereum/examples/set_initializer/contributor_receipts so the coordinator can use it
-committed values are: Digest(62bedc480ecf6c33e68942db767eeeb4fede1089291ee15a396add407dc2af73)
