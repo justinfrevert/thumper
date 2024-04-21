@@ -30,7 +30,7 @@ use risc0_zkvm::serde::to_vec;
 use risc0_zkvm::{ExecutorEnv};
 use risc0_zkvm::default_prover;
 use tracing_subscriber::EnvFilter;
-
+use std::fs;
 /// Address of the deployed contract to call the function on. Here: USDT contract on Sepolia
 /// Must match the guest code.
 const CONTRACT: Address = address!("Ad59e59419e78bD3AE1F6c1350EeF30567D9EA4A");
@@ -108,8 +108,6 @@ fn main() -> Result<()> {
         returns._0
     );
 
-    // let (journal, post_state_digest, seal) = BonsaiProver::prove(BALANCE_OF_ELF, &input)?;
-
     let env = ExecutorEnv::builder()
         .write(&view_call_input)
         .unwrap()
@@ -126,35 +124,8 @@ fn main() -> Result<()> {
     let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap();
     receipt.verify(BALANCE_OF_ID);
 
-
-    // let env = ExecutorEnv::builder()
-    //     .write(&input)
-    //     .unwrap()
-    //     .build()
-    //     .unwrap();
-
-    // Obtain the default prover.
-    // let prover = default_prover();
-    // Produce a receipt by proving the specified ELF binary.
-    // let receipt = prover.prove(env, BALANCE_OF_ELF).unwrap().receipt;
-
-    println!("Done getting proof");
-
-    // // Encode the function call for `ICounter.increment(journal, post_state_digest, seal)`.
-    // let calldata = ICounter::ICounterCalls::increment(ICounter::incrementCall {
-    //     journal,
-    //     post_state_digest,
-    //     seal,
-    // })
-    // .abi_encode();
-
-    // println!("Done performing counter increment");
-
-
-    // // Send the calldata to Ethereum.
-    // let runtime = tokio::runtime::Runtime::new()?;
-    // runtime.block_on(tx_sender.send(calldata))?;
-
+    println!("Outputting receipt to contributor.receipt. This is for you to submit");
+    let serialized = bincode::serialize(&receipt).unwrap();
+    fs::write("contributor.receipt", serialized)?;
     Ok(())
 }
-

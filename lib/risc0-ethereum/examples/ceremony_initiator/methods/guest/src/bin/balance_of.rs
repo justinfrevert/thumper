@@ -64,7 +64,7 @@ fn main() {
     let digest = Digest::try_from(digest.as_slice()).unwrap();
 
     // Prove we have the key for the chosen initator(just the first key)
-    // assert!(&returns._0 == digest.as_words());
+    // assert!(&returns._0[0] == digest);
 
     let mut rand_bytes = [0_u32; 5];
     let randoms = env::syscall(SYS_RANDOM, &[], rand_bytes.as_mut_slice());
@@ -78,7 +78,9 @@ fn main() {
 
     let mut compressed_bytes = Vec::new();
     contribution.serialize_compressed(&mut compressed_bytes).unwrap();
+    // We commit to the bytes of the current contribution, as well as a number indicating the index of the next participant.
+    // The next participant will need to prove that they are at the given index of the participants in order to generate a proof
+    // env::commit(&(compressed_bytes, 1));
     env::commit(&compressed_bytes);
-
 }
 
