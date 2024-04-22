@@ -2,7 +2,7 @@
 
 <img src="./images/thumper3.webp" alt="Thumper Image" width="500" height="400"/>
 
-Like the [KZG summoning ceremony]([url](https://ceremony.ethereum.org/)), this project also focuses on *summoning randomness*.
+Like the [KZG Summoning Ceremony](https://ceremony.ethereum.org/) this project also focuses on *summoning randomness*.
 
 *In the vast expanse of the known universe, there exists a desert planet called Arrakis, more commonly known as Dune. Its landscape is a sprawling sea of sand and home to the Fremen, a tribe of hardy people who have adapted to the harsh environment. Within the sands live the colossal sandworms, creatures of the deep desert, and worshipped by the Fremen as the keepers of Arrakis.*
 
